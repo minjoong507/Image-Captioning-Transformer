@@ -12,7 +12,9 @@ import torch.optim as optim
 import pickle
 import os
 from tqdm import tqdm
+
 logger = logging.getLogger(__name__)
+
 
 # device = 'cuda:4' if torch.cuda.is_available() else 'cpu'
 # torch.cuda.set_device(device)
@@ -31,6 +33,20 @@ class Image_Captioning:
         self.DataLoader = get_dataloader(self.args)
         self.Model = BertCaptioning(self.args, len(self.vocab))
 
+    def translate(self, output, batch):
+        outputs, inputs, targets = output.cpu(), batch['captions_input_ids'].cpu(), batch['captions_label'].cpu()
+
+        for predict, input, target in zip(outputs, inputs, targets):
+            _, predict = predict.max(dim=1)
+
+            predict = [self.vocab.idx2word[idx] for idx in predict.tolist()]
+            input = [self.vocab.idx2word[idx] for idx in input.tolist()]
+            target = [self.vocab.idx2word[idx] for idx in target.tolist() if idx != -1]
+
+            print("predict : {} \n input : {}\n answer : {}\n".format(' '.join(predict),
+                                                                      ' '.join(input),
+                                                                      ' '.join(target)))
+
     def train(self):
         self.Model.to(self.args.device)
         # parameters = self.Model.parameters()
@@ -42,23 +58,51 @@ class Image_Captioning:
         #                      schedule="warmup_linear")
 
         optimizer = optim.Adam(self.Model.parameters(), lr=self.args.lr)
+
         print("Now training")
         self.Model.train()
-        for epoch in tqdm(range(self.args.epochs)):
-            epoch_loss = 0.0
-            for batch_idx, batch in enumerate(self.DataLoader):
-                optimizer.zero_grad()
+        for epoch in range(self.args.epochs):
+            self.train_epoch(epoch, self.DataLoader, optimizer, self.Model)
+            # epoch_loss = 0.0
+            # last_batch = None
+            # last_output = None
+            #
+            # for batch_idx, batch in tqdm(enumerate(self.DataLoader)):
+            #     optimizer.zero_grad()
+            #
+            #     batch = prepare_batch_input(batch, self.args.device)
+            #     output, loss = self.Model(batch)
+            #
+            #     loss.backward()
+            #     optimizer.step()
+            #     epoch_loss += loss.item()
+            #
+            #     last_batch = batch
+            #     last_output = output
+            #
+            # print("Epoch : [{}/{}]\t Loss : {:.4f}".format(epoch, self.args.epochs, epoch_loss / len(self.DataLoader)))
+            # self.translate(last_output, last_batch)
 
-                batch = prepare_batch_input(batch, self.args.device)
-                loss = self.Model(batch)
+    def train_epoch(self, epoch, dataloader, optimizer, model):
+        epoch_loss = 0.0
+        last_batch = None
+        last_output = None
 
-                loss.backward()
-                optimizer.step()
-                epoch_loss += loss.item()
+        for batch_idx, batch in tqdm(enumerate(dataloader), desc=" Training =>", total=len(dataloader)):
+            optimizer.zero_grad()
 
-                # print("Epoch : {}\t Step : [{}/{}]\t Loss : {:.4f}".format(epoch, batch_idx, len(self.DataLoader) / self.args.batch_size, self.args.epochs, loss))
+            batch = prepare_batch_input(batch, self.args.device)
+            output, loss = model(batch)
 
-            print("Epoch : [{}/{}]\t Loss : {:.4f}".format(epoch, self.args.epochs, epoch_loss / len(self.DataLoader)))
+            loss.backward()
+            optimizer.step()
+            epoch_loss += loss.item()
+
+            last_batch = batch
+            last_output = output
+
+        print("Epoch : [{}/{}]\t Loss : {:.4f}".format(epoch, self.args.epochs, epoch_loss / len(self.DataLoader)))
+        self.translate(last_output, last_batch)
 
 
 if __name__ == '__main__':
