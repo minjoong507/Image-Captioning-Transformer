@@ -49,21 +49,26 @@ class ImageCaption_DataLoader(data.Dataset):
 
         img_feat = self.img_feautre[img_id]
         img_feature, img_tokens, img_mask = self.convert_img_feature(img_feat)
-        sen_tokens, sen_mask = self.convert_sentence_feature(str(captions).lower(), self.config.max_sub_len)
+        sen_tokens, sen_mask, captions_tokens, captions_mask = self.convert_sentence_feature(str(captions).lower(), self.config.max_sub_len)
 
         img_sen_tokens = img_tokens + sen_tokens
 
-        img_sen_tokens = [self.vocab(tokens) for tokens in img_sen_tokens]
+        img_sen_input_ids = [self.vocab(tokens) for tokens in img_sen_tokens]
         img_sen_mask = img_mask + sen_mask
-        img_sen_label = [self.IGNORE if m == 0 else token
-                         for token, m, in zip(img_sen_tokens, img_sen_mask)][1:] + [self.IGNORE]
+
+        captions_input_ids = [self.vocab(tokens) for tokens in captions_tokens]
+
+        captions_label = [self.IGNORE if m == 0 else token
+                         for token, m, in zip(captions_input_ids, captions_mask)][1:] + [self.IGNORE]
 
         data = dict(
             img_feature=np.array(img_feat),
-            img_mask=np.array(img_mask),
-            img_sen_tokens=np.array(img_sen_tokens),
-            img_sen_mask=np.array(img_sen_mask),
-            img_sen_label=np.array(img_sen_label)
+            img_mask=np.array(img_mask).astype(np.float32),
+            img_sen_input_ids=np.array(img_sen_input_ids).astype(np.int64),
+            img_sen_mask=np.array(img_sen_mask).astype(np.float32),
+            captions_input_ids=np.array(captions_input_ids).astype(np.int64),
+            captions_mask=np.array(captions_mask).astype(np.float32).astype(np.int64),
+            captions_label=np.array(captions_label).astype(np.int64),
         )
 
         return data
@@ -87,7 +92,10 @@ class ImageCaption_DataLoader(data.Dataset):
         mask = [1] * vaild_len + [0] * (max_sen_len - vaild_len)
         sentence_tokens += [self.PAD_TOKEN] * (max_sen_len - vaild_len)
 
-        return sentence_tokens, mask
+        caption_mask = mask + [0] * 3
+        caption_tokens = sentence_tokens + [self.PAD_TOKEN] * 3
+
+        return sentence_tokens, mask, caption_tokens, caption_mask
 
 
 def collate_fn(data):
