@@ -35,19 +35,6 @@ def gelu(x):
     return x * 0.5 * (1.0 + torch.erf(x / math.sqrt(2.0)))
 
 
-def swish(x):
-    return x * torch.sigmoid(x)
-
-
-ACT2FN = {"gelu": gelu, "relu": torch.nn.functional.relu, "swish": swish}
-
-
-class GELU(nn.Module):
-    def forward(self, input_):
-        output = gelu(input_)
-        return output
-
-
 class BertSelfAttention(nn.Module):
     def __init__(self, config):
         super(BertSelfAttention, self).__init__()
@@ -66,30 +53,37 @@ class BertSelfAttention(nn.Module):
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 
     def transpose_for_scores(self, x):
-        new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
+        new_x_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)  # (N, L, nh, dh)
         x = x.view(*new_x_shape)
-        return x.permute(0, 2, 1, 3)
+        return x.permute(0, 2, 1, 3)  # (N, nh, L, dh)
 
-    def forward(self, hidden_states, attention_mask):
-        # print("!! h : {}, mask : {}".format(hidden_states.shape, attention_mask.shape))
+    def forward(self, query_states, key_states, value_states, attention_mask):
+        """
+        Args:
+            query_states: (N, Lq, D)
+            key_states: (N, L, D)
+            value_states: (N, L, D)
+            attention_mask: (N, Lq, L)
 
-        mixed_query_layer = self.query(hidden_states)
-        mixed_key_layer = self.key(hidden_states)
-        mixed_value_layer = self.value(hidden_states)
+        Returns:
 
-        query_layer = self.transpose_for_scores(mixed_query_layer)
-        key_layer = self.transpose_for_scores(mixed_key_layer)
-        value_layer = self.transpose_for_scores(mixed_value_layer)
+        """
+
+        # only need to mask the dimension where the softmax (last dim) is applied, as another dim (second last)
+        # will be ignored in future computation anyway
+        attention_mask = (1 - attention_mask.unsqueeze(1)) * -10000.  # (N, 1, Lq, L)
+        mixed_query_layer = self.query(query_states)
+        mixed_key_layer = self.key(key_states)
+        mixed_value_layer = self.value(value_states)
+
+        query_layer = self.transpose_for_scores(mixed_query_layer)  # (N, nh, Lq, dh)
+        key_layer = self.transpose_for_scores(mixed_key_layer)  # (N, nh, L, dh)
+        value_layer = self.transpose_for_scores(mixed_value_layer)  # (N, nh, L, dh)
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
-        attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
+        attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))  # (N, nh, Lq, L)
         attention_scores = attention_scores / math.sqrt(self.attention_head_size)
         # Apply the attention mask is (precomputed for all layers in BertModel forward() function)
-
-        attention_mask = attention_mask.unsqueeze(1).repeat(1, self.num_attention_heads, 1, 1)
-
-        # print("!! ats : {}, atm : {}".format(attention_scores.shape, attention_mask.shape))
-
         attention_scores = attention_scores + attention_mask
 
         # Normalize the attention scores to probabilities.
@@ -127,7 +121,7 @@ class BertAttention(nn.Module):
         self.output = BertSelfOutput(config)
 
     def forward(self, input_tensor, attention_mask):
-        self_output = self.self(input_tensor, attention_mask)
+        self_output = self.self(input_tensor, input_tensor, input_tensor, attention_mask)
         attention_output = self.output(self_output, input_tensor)
         return attention_output
 
