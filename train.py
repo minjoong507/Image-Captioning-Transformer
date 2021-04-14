@@ -18,7 +18,7 @@ class Bert_Captioning:
     def __init__(self):
         self.config = BasicOption().parse()
         self.vocab = load_pickle(self.config.vocab_path)
-        self.config.device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+        self.config.device = torch.device('cuda:'.format(self.config.device) if torch.cuda.is_available() else 'cpu')
         torch.cuda.set_device(self.config.device)
         self.config.vocab_size = len(self.vocab)
         self.DataLoader = get_dataloader(self.config)
