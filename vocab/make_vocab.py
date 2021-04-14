@@ -64,7 +64,7 @@ class Make_vocab:
         self.vocab.add_word('[PAD]')
         self.vocab.add_word('[CLS]')
         self.vocab.add_word('[SEP]')
-        self.vocab.add_word('[VID]')
+        self.vocab.add_word('[IMG]')
         self.vocab.add_word('[BOS]')
         self.vocab.add_word('[EOS]')
         self.vocab.add_word('[UNK]')
