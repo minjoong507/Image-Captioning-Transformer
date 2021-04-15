@@ -2,7 +2,7 @@
 
 ## Intro
 
-- This project is an implementation of Image Captiong model based on Transformer Encoder and Deocder.
+- This project is an implementation of Image Captiong model based on Transformer
 
 - Used Pytorch for the code. ResNet101 is used for extracting the features. You can check pre-trained models [here](https://github.com/pytorch/vision/tree/master/torchvision/models).
 
