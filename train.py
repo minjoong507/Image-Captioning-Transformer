@@ -28,21 +28,22 @@ class Bert_Captioning:
         outputs, inputs, targets = output.cpu(), batch['captions_input_ids'].cpu(), batch['captions_label'].cpu()
         translate = ""
 
-        for predict, input, target in zip(outputs, inputs, targets):
+        for batch_idx, (predict, input, target) in enumerate(zip(outputs, inputs, targets)):
             _, predict = predict.max(dim=1)
 
             """
                 Print the result before [EOS] token.
             """
+
             predict = [self.vocab.idx2word[idx] for idx in predict.tolist()]
             input = [self.vocab.idx2word[idx] for idx in input.tolist()]
             target = [self.vocab.idx2word[idx] for idx in target.tolist() if idx != -1]
 
             predict, input = self.remove_eos(predict), self.remove_eos(input)
 
-            translate += ("predict : {} \n input : {}\n answer : {}\n".format(predict, input, ' '.join(target)))
+            translate += ("[Result : {}] \n predict : {} \n input : {}\n target : {}\n".format(batch_idx, predict, input, ' '.join(target)))
 
-        return translate
+        return translate, predict, target
 
     def remove_eos(self, input):
         result = ''
@@ -78,10 +79,30 @@ class Bert_Captioning:
         model_name = result_path + '/' + 'model.ckpt'
         torch.save(checkpoint, model_name)
 
+    def cal_performance(self, predict, target):
+
+        total_words = 0
+        total_correct_words = 0
+
+        for (p, t) in zip(predict, target):
+            correct = 0
+            vaild_len = min(len(p), len(t))
+            for i in range(vaild_len):
+                if p[i] == t[i]:
+                    correct += 1
+
+            total_words += vaild_len
+            total_correct_words += correct
+
+        return total_words, total_correct_words
+
     def train_epoch(self, epoch, dataloader, optimizer, model, filename):
         epoch_loss = 0.0
         last_batch = None
         last_output = None
+
+        total_words = 0
+        total_correct_words = 0
 
         for batch_idx, batch in tqdm(enumerate(dataloader), desc=" Training =>", total=len(dataloader)):
             optimizer.zero_grad()
@@ -93,17 +114,23 @@ class Bert_Captioning:
             optimizer.step()
             epoch_loss += loss.item()
 
+            _, p, t = self.translate(output, batch)
+            p = p.split(' ')
+            words, correct_words = self.cal_performance(p, t)
+            total_words += words
+            total_correct_words += correct_words
+
             last_batch = batch
             last_output = output
 
-        epoch_result = "Epoch : [{}/{}]\t Loss : {:.4f}".format(epoch, self.config.epochs, epoch_loss / len(self.DataLoader))
-        translate = self.translate(last_output, last_batch)
+        epoch_result = "Train Epoch : [{}/{}]\t Loss : {:.4f}".format(epoch, self.config.epochs, epoch_loss / len(self.DataLoader))
+        correct_result = "Train Acc : {:.4f}".format((total_correct_words / total_words) * 100)
+        translate, _, _ = self.translate(last_output, last_batch)
 
-        result = epoch_result + '\n' + translate + '\n'
+        result = epoch_result + '\n' + translate + '\n' + correct_result + '\n'
         print(result)
 
         write_log(filename, result)
-
 
 if __name__ == '__main__':
     b = Bert_Captioning()

@@ -12,7 +12,7 @@ class BasicOption:
         self.parser.add_argument('--annotations_dir', default='data/annotations/captions_val2017.json', type=str)
         self.parser.add_argument('--img_dir', default='data/val2017/', type=str)
         self.parser.add_argument('--crop_size', default=224, type=int)
-        self.parser.add_argument('--epochs', default=1, type=int)
+        self.parser.add_argument('--epochs', default=100, type=int)
         self.parser.add_argument('--lr', default=1e-4, type=float)
         self.parser.add_argument('--batch_size', default=4, help='')
         self.parser.add_argument('--num_workers', default=4, type=int)
@@ -36,7 +36,7 @@ class BasicOption:
         self.parser.add_argument("--lr_warmup_proportion", type=float, default=0.1)
         self.parser.add_argument('--max_sub_len', type=int, default=30)
         self.parser.add_argument('--min_fq', type=int, default=5)
-        self.parser.add_argument('--device', type=int, default=0)
+        self.parser.add_argument('--device', type=int, default=4)
         self.parser.add_argument('--result_path', type=str, default='result')
 
     def parse(self):
