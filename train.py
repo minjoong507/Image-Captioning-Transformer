@@ -18,7 +18,7 @@ class Bert_Captioning:
     def __init__(self):
         self.config = BasicOption().parse()
         self.vocab = load_pickle(self.config.vocab_path)
-        self.config.device = torch.device('cuda:'.format(self.config.device) if torch.cuda.is_available() else 'cpu')
+        self.config.device = torch.device('cuda:{}'.format(self.config.device) if torch.cuda.is_available() else 'cpu')
         torch.cuda.set_device(self.config.device)
         self.config.vocab_size = len(self.vocab)
         self.DataLoader = get_dataloader(self.config)
@@ -31,14 +31,28 @@ class Bert_Captioning:
         for predict, input, target in zip(outputs, inputs, targets):
             _, predict = predict.max(dim=1)
 
+            """
+                Print the result before [EOS] token.
+            """
             predict = [self.vocab.idx2word[idx] for idx in predict.tolist()]
             input = [self.vocab.idx2word[idx] for idx in input.tolist()]
             target = [self.vocab.idx2word[idx] for idx in target.tolist() if idx != -1]
 
-            translate += ("predict : {} \n input : {}\n answer : {}\n".format(' '.join(predict),
-                                                                              ' '.join(input),
-                                                                              ' '.join(target)))
+            predict, input = self.remove_eos(predict), self.remove_eos(input)
+
+            translate += ("predict : {} \n input : {}\n answer : {}\n".format(predict, input, ' '.join(target)))
+
         return translate
+
+    def remove_eos(self, input):
+        result = ''
+        for word in input:
+            if word == '[EOS]':
+                result += word + ' '
+                break
+            result += word + ' '
+
+        return result
 
     def train(self):
         mkdirp(self.config.result_path)
