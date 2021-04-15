@@ -26,5 +26,3 @@ def start_time():
 def write_log(filename, content):
     with open(filename, 'a') as f:
         f.write(content)
-
-
