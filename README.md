@@ -1,4 +1,4 @@
-# Image Captioning
+# Image Captioning Transformer
 
 ## Intro
 
@@ -18,20 +18,25 @@
 
 ## File
 ```
-Text-Seminar
-├── Assignment # for assignment
-│   ├── assignment1
-│   ├── assignment2
-│   ├── assignment3
-│   └── assignment4
-├── Slides # for lecture files
-│   ├── week1
-│   ├── week2
-│   ├── week3
-│   ├── week4
-│   ├── week5
-│   ├── week6
-│   └── week7
+Image-Captioning-Transformer
+├── model
+│   ├── data_loader.py
+│   ├── layers.py
+│   ├── model.py
+│   └── optimization.py
+├── data
+│   ├── output_feature.pickle # after python extraction.py
+│   ├── annotations
+│   ├── ls
+│   └── val2017
+├── feature_extraction
+│   ├── data_loader.py
+│   ├── extraction.py
+│   └── resnet.py
+├── vocab
+│   ├── vocab.pickle # after python make_vocab.py
+│   ├── coco_idx.npy # after python extraction.py
+│   └── make_vocab.py
 ├── LICENSE
 ├── .gitignore
 └── README.md
@@ -52,7 +57,7 @@ mkdir data
 data
 ├── annotations
 ├── ls
-├── val2017
+└── val2017
 ```
 
 2. Install packages:
@@ -83,6 +88,8 @@ python feature_extraction/extraction.py
 ```
 python train.py
 ```
+
+## Evaluation
 
 
 ## TODO List
