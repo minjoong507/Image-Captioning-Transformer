@@ -91,6 +91,13 @@ python train.py
 
 Training using the above config will stop at epoch 100. I use single RTX 3090 GPU. `result` dir containing the result of code. `2021-*`(=Start time) containing the saved model and train-log.txt.
 
+```
+result
+└──2021-04-16-12-00
+    ├── model.ckpt
+    └── train-log.txt
+```
+
 ## Evaluation
 Unconstructed
 
