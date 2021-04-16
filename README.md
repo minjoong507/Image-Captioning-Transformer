@@ -62,7 +62,7 @@ data
 
 2. Install packages:
 
-- Python 3.X
+- Python 3.8.5
 - Pytorch 1.7.0+cu110
 - nltk
 - tqdm
@@ -76,7 +76,7 @@ data
 python vocab/make_vocab.py
 ```
 
-4. Get Image features
+4. Extract Image features
 
 
 ```
@@ -89,8 +89,10 @@ python feature_extraction/extraction.py
 python train.py
 ```
 
-## Evaluation
+Training using the above config will stop at epoch 100. I use single RTX 3090 GPU. `result` dir containing the result of code. `2021-*`(=Start time) containing the saved model and train-log.txt.
 
+## Evaluation
+Unconstructed
 
 ## TODO List
 - [ ] Description of the model and other details
