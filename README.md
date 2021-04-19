@@ -10,12 +10,6 @@
 
 - Please check `config.py`
 
-## Environment
-
-- Python 3.8.5
-- Pytorch 1.7.1
-- cuda 11.0
-
 ## File
 ```
 Image-Captioning-Transformer
