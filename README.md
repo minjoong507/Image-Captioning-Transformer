@@ -8,7 +8,7 @@
 
 - Using [COCO dataset](https://cocodataset.org/#home) 2017 Val images [5K/1GB], annotations [241MB].
 
-- Please check `config.py`. Also, you can train on multi GPU.
+- Please check `config.py`. Also, you can train on multi GPUs.
 
 ## File
 ```
