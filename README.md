@@ -8,7 +8,7 @@
 
 - Using [COCO dataset](https://cocodataset.org/#home) 2017 Val images [5K/1GB], annotations [241MB].
 
-- Please check `config.py`
+- Please check `config.py`. Also, you can train on multi GPU.
 
 ## File
 ```
@@ -83,7 +83,7 @@ python feature_extraction/extraction.py
 python train.py
 ```
 
-Training using the above config will stop at epoch 100. I use single RTX 3090 GPU. `result` dir containing the result of code. `2021-*`(=Start time) containing the saved model and train-log.txt.
+Training using the above config will stop at epoch 100. I use single or six RTX 3090 GPU. `result` dir containing the result of code. `2021-*`(=Start time) containing the saved model and train-log.txt.
 
 ```
 result
