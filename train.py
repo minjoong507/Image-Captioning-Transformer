@@ -18,8 +18,11 @@ class Bert_Captioning:
     def __init__(self):
         self.config = BasicOption().parse()
         self.vocab = load_pickle(self.config.vocab_path)
-        self.config.device = torch.device('cuda:{}'.format(self.config.device) if torch.cuda.is_available() else 'cpu')
-        torch.cuda.set_device(self.config.device)
+        self.MultiGPU = False
+        if torch.cuda.device_count() > 1:
+            print("Using Multi GPU")
+            logger.info("Using Multi GPU")
+            self.MultiGPU = True
         self.config.vocab_size = len(self.vocab)
         self.DataLoader = get_dataloader(self.config)
         self.Model = BertCaptioning(self.config, len(self.vocab))
@@ -61,7 +64,10 @@ class Bert_Captioning:
         mkdirp(result_path)
         filename = result_path + '/' + 'train-log.txt'
 
-        self.Model.to(self.config.device)
+        # self.Model.to(self.config.device)
+        if self.MultiGPU:
+            self.Model = nn.DataParallel(self.Model)
+        self.Model.cuda()
         optimizer = optim.Adam(self.Model.parameters(), lr=self.config.lr)
 
         print("Now training")
@@ -76,7 +82,7 @@ class Bert_Captioning:
             "epoch": self.config.epochs
         }
 
-        model_name = result_path + '/' + 'model.ckpt'
+        model_name = result_path + '/' + 'model-{}.ckpt'.format(self.config.epochs)
         torch.save(checkpoint, model_name)
 
     def cal_performance(self, predict, target):
@@ -110,9 +116,14 @@ class Bert_Captioning:
             batch = prepare_batch_input(batch, self.config.device)
             output, loss = model(batch)
 
-            loss.backward()
+            if self.MultiGPU:
+                loss.sum().backward()
+                epoch_loss += loss.sum().item()
+            else:
+                loss.backward()
+                epoch_loss += loss.item()
+
             optimizer.step()
-            epoch_loss += loss.item()
 
             _, p, t = self.translate(output, batch)
             p = p.split(' ')
@@ -131,6 +142,7 @@ class Bert_Captioning:
         print(result)
 
         write_log(filename, result)
+
 
 if __name__ == '__main__':
     b = Bert_Captioning()
