@@ -121,8 +121,8 @@ Image-Captioning-Transformer
 ```
 
 ## License
-[MIT License](https://opensource.org/licenses/MIT)
+- [MIT License](https://opensource.org/licenses/MIT)
 
 ## Reference
-[1] [TVCaption](https://github.com/jayleicn/TVCaption)
-[2] [huggingface/transformer](https://github.com/huggingface/transformers)
+- [1] [TVCaption](https://github.com/jayleicn/TVCaption)
+- [2] [huggingface/transformer](https://github.com/huggingface/transformers)
