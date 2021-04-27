@@ -8,33 +8,7 @@
 
 - Using [COCO dataset](https://cocodataset.org/#home) 2017 Val images [5K/1GB], annotations [241MB].
 
-- Please check `config.py`
-
-## File
-```
-Image-Captioning-Transformer
-├── model
-│   ├── data_loader.py
-│   ├── layers.py
-│   ├── model.py
-│   └── optimization.py
-├── data
-│   ├── output_feature.pickle # after python extraction.py
-│   ├── annotations
-│   ├── ls
-│   └── val2017
-├── feature_extraction
-│   ├── data_loader.py
-│   ├── extraction.py
-│   └── resnet.py
-├── vocab
-│   ├── vocab.pickle # after python make_vocab.py
-│   ├── coco_idx.npy # after python extraction.py
-│   └── make_vocab.py
-├── LICENSE
-├── .gitignore
-└── README.md
-```
+- Please check `config.py`. Also, you can train on multi GPUs.
 
 ## Getting Started
 **Prerequisites**
@@ -83,17 +57,36 @@ python feature_extraction/extraction.py
 python train.py
 ```
 
-Training using the above config will stop at epoch 100. I use single RTX 3090 GPU. `result` dir containing the result of code. `2021-*`(=Start time) containing the saved model and train-log.txt.
+Training using the above config will stop at epoch 100. I use single or six RTX 3090 GPU. `result` dir containing the result of code. `2021-*`(=Start time) containing the saved model and train-log.txt.
 
+Example
 ```
 result
 └──2021-04-16-12-00
-    ├── model.ckpt
+    ├── model-{epoch}.ckpt
     └── train-log.txt
 ```
 
 ## Evaluation
-Unconstructed
+
+- Train loss & acc (100 epoch)
+    - Single GPU : 
+    - Six GPUs : 
+        - Accuracy :99.4794 %
+        - result
+        ```
+        predict : a picture of a giraffe standing in a zoo exhibit . [EOS]
+        target : a picture of a giraffe standing in a zoo exhibit . [EOS]
+
+        predict : people and buses on a city street under cloudy skies . [EOS]
+        target : people and buses on a city street under cloudy skies . [EOS]
+
+        predict : a man at an office desk drinking a glass of wine . [EOS]
+        target : a man at an office desk drinking a glass of wine . [EOS]
+
+        predict : two zebras are standing next to a log . [EOS]
+        target : two zebras are standing next to a log . [EOS]
+        ```
 
 ## TODO List
 - [ ] Description of the model and other details
@@ -101,8 +94,35 @@ Unconstructed
 - [ ] Upload requirements.txt
 - [ ] Add Inference.py
 
+## File
+```
+Image-Captioning-Transformer
+├── model
+│   ├── data_loader.py
+│   ├── layers.py
+│   ├── model.py
+│   └── optimization.py
+├── data
+│   ├── output_feature.pickle # after python extraction.py
+│   ├── annotations
+│   ├── ls
+│   └── val2017
+├── feature_extraction
+│   ├── data_loader.py
+│   ├── extraction.py
+│   └── resnet.py
+├── vocab
+│   ├── vocab.pickle # after python make_vocab.py
+│   ├── coco_idx.npy # after python extraction.py
+│   └── make_vocab.py
+├── LICENSE
+├── .gitignore
+└── README.md
+```
+
 ## License
-[MIT License](https://opensource.org/licenses/MIT)
+- [MIT License](https://opensource.org/licenses/MIT)
 
 ## Reference
-[1] [TVCaption](https://github.com/jayleicn/TVCaption)
+- [1] [TVCaption](https://github.com/jayleicn/TVCaption)
+- [2] [huggingface/transformer](https://github.com/huggingface/transformers)
