@@ -125,3 +125,4 @@ Image-Captioning-Transformer
 
 ## Reference
 [1] [TVCaption](https://github.com/jayleicn/TVCaption)
+[2] [huggingface/transformer](https://github.com/huggingface/transformers)
