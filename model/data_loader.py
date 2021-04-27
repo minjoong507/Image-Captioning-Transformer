@@ -62,6 +62,7 @@ class ImageCaption_DataLoader(data.Dataset):
                          for token, m, in zip(captions_input_ids, captions_mask)][1:] + [self.IGNORE]
 
         data = dict(
+            img_id=img_id,
             img_feature=np.array(img_feat),
             img_mask=np.array(img_mask).astype(np.float32),
             img_sen_input_ids=np.array(img_sen_input_ids).astype(np.int64),
@@ -99,7 +100,6 @@ class ImageCaption_DataLoader(data.Dataset):
 
 
 def collate_fn(data):
-    print(data)
     for i in data:
         for (key, value) in i.items():
             print("key : {}, value : {}, shape : {}".format(key, value, value.shape))
@@ -120,7 +120,10 @@ def collate_fn(data):
 def prepare_batch_input(batch, device):
     batch_input = dict()
     for k, v in batch.items():
-        batch_input[k] = v.to(device)
+        if k == 'img_id':
+            batch_input[k] = v
+        else:
+            batch_input[k] = v.to(device)
 
     return batch_input
 

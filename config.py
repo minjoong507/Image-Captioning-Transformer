@@ -37,6 +37,7 @@ class BasicOption:
         self.parser.add_argument('--max_sub_len', type=int, default=30)
         self.parser.add_argument('--min_fq', type=int, default=5)
         self.parser.add_argument('--device', type=int, default=0)
+        self.parser.add_argument('--MultiGPU', type=int, default=0, help='0 : Using single gpu, 1 : Using multi gpus')
         self.parser.add_argument('--result_path', type=str, default='result')
 
     def parse(self):

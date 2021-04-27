@@ -18,20 +18,24 @@ class Bert_Captioning:
     def __init__(self):
         self.config = BasicOption().parse()
         self.vocab = load_pickle(self.config.vocab_path)
-        self.MultiGPU = False
-        if torch.cuda.device_count() > 1:
-            print("Using Multi GPU")
+        self.MultiGPU = False if self.config.MultiGPU == 0 else True
+        if self.MultiGPU and torch.cuda.device_count() > 1:
+            print("Using Multi GPUs")
             logger.info("Using Multi GPU")
-            self.MultiGPU = True
+        else:
+            print("Using Single GPU")
         self.config.vocab_size = len(self.vocab)
         self.DataLoader = get_dataloader(self.config)
         self.Model = BertCaptioning(self.config, len(self.vocab))
 
     def translate(self, output, batch):
-        outputs, inputs, targets = output.cpu(), batch['captions_input_ids'].cpu(), batch['captions_label'].cpu()
+        outputs, inputs, targets, img_ids = output.cpu(), batch['captions_input_ids'].cpu(), batch['captions_label'].cpu(), batch['img_id']
         translate = ""
 
-        for batch_idx, (predict, input, target) in enumerate(zip(outputs, inputs, targets)):
+        batch_predict = []
+        batch_label = []
+
+        for batch_idx, (predict, input, target, img_id) in enumerate(zip(outputs, inputs, targets, img_ids)):
             _, predict = predict.max(dim=1)
 
             """
@@ -39,58 +43,32 @@ class Bert_Captioning:
             """
 
             predict = [self.vocab.idx2word[idx] for idx in predict.tolist()]
-            input = [self.vocab.idx2word[idx] for idx in input.tolist()]
+            # input = [self.vocab.idx2word[idx] for idx in input.tolist()]
             target = [self.vocab.idx2word[idx] for idx in target.tolist() if idx != -1]
 
-            predict, input = self.remove_eos(predict), self.remove_eos(input)
+            # predict, input = self.clean_text(predict), self.clean_text(input)
+            predict = self.clean_text(predict)
+            batch_predict.append(predict)
+            batch_label.append(target)
+            translate = "[Image id : {}] \n predict : {} \n target : {}\n".format(img_id, ' '.join(predict), ' '.join(target))
 
-            translate += ("[Result : {}] \n predict : {} \n input : {}\n target : {}\n".format(batch_idx, predict, input, ' '.join(target)))
+        return translate, batch_predict, batch_label
 
-        return translate, predict, target
-
-    def remove_eos(self, input):
-        result = ''
+    def clean_text(self, input):
+        result = []
         for word in input:
             if word == '[EOS]':
-                result += word + ' '
+                result.append(word)
                 break
-            result += word + ' '
+            result.append(word)
 
         return result
 
-    def train(self):
-        mkdirp(self.config.result_path)
-        result_path = self.config.result_path + '/' + start_time()
-        mkdirp(result_path)
-        filename = result_path + '/' + 'train-log.txt'
-
-        # self.Model.to(self.config.device)
-        if self.MultiGPU:
-            self.Model = nn.DataParallel(self.Model)
-        self.Model.cuda()
-        optimizer = optim.Adam(self.Model.parameters(), lr=self.config.lr)
-
-        print("Now training")
-        self.Model.train()
-        for epoch in range(self.config.epochs):
-            self.train_epoch(epoch, self.DataLoader, optimizer, self.Model, filename)
-
-        checkpoint = {
-            "model": self.Model.state_dict(),
-            "model_cfg": self.Model.config,
-            "config": self.config,
-            "epoch": self.config.epochs
-        }
-
-        model_name = result_path + '/' + 'model-{}.ckpt'.format(self.config.epochs)
-        torch.save(checkpoint, model_name)
-
-    def cal_performance(self, predict, target):
-
+    def cal_performance(self, output, target):
         total_words = 0
         total_correct_words = 0
 
-        for (p, t) in zip(predict, target):
+        for (p, t) in zip(output, target):
             correct = 0
             vaild_len = min(len(p), len(t))
             for i in range(vaild_len):
@@ -103,10 +81,8 @@ class Bert_Captioning:
         return total_words, total_correct_words
 
     def train_epoch(self, epoch, dataloader, optimizer, model, filename):
+        translate = ""
         epoch_loss = 0.0
-        last_batch = None
-        last_output = None
-
         total_words = 0
         total_correct_words = 0
 
@@ -125,23 +101,42 @@ class Bert_Captioning:
 
             optimizer.step()
 
-            _, p, t = self.translate(output, batch)
-            p = p.split(' ')
-            words, correct_words = self.cal_performance(p, t)
+            translate, batch_output, batch_label = self.translate(output, batch)
+            words, correct_words = self.cal_performance(batch_output, batch_label)
             total_words += words
             total_correct_words += correct_words
 
-            last_batch = batch
-            last_output = output
+        epoch_result = "[Train] Epoch : [{}/{}]\t Loss : {:.4f}\t Acc : {:.4f}".format(epoch, self.config.epochs, epoch_loss / len(self.DataLoader), (total_correct_words / total_words) * 100)
 
-        epoch_result = "Train Epoch : [{}/{}]\t Loss : {:.4f}".format(epoch, self.config.epochs, epoch_loss / len(self.DataLoader))
-        correct_result = "Train Acc : {:.4f}".format((total_correct_words / total_words) * 100)
-        translate, _, _ = self.translate(last_output, last_batch)
-
-        result = epoch_result + '\n' + translate + '\n' + correct_result + '\n'
+        result = epoch_result + '\n' + translate + '\n' + '-' * 100
         print(result)
 
         write_log(filename, result)
+
+    def train(self):
+        mkdirp(self.config.result_path)
+        result_path = self.config.result_path + '/' + start_time()
+        mkdirp(result_path)
+        filename = result_path + '/' + 'train-log.txt'
+
+        if self.MultiGPU:
+            self.Model = nn.DataParallel(self.Model)
+        self.Model.cuda()
+        optimizer = optim.Adam(self.Model.parameters(), lr=self.config.lr)
+
+        print("Now training")
+        self.Model.train()
+        for epoch in range(self.config.epochs):
+            self.train_epoch(epoch, self.DataLoader, optimizer, self.Model, filename)
+
+        checkpoint = {
+            "model": self.Model.state_dict(),
+            "config": self.config,
+            "epoch": self.config.epochs
+        }
+
+        model_name = result_path + '/' + 'model-{}.ckpt'.format(self.config.epochs)
+        torch.save(checkpoint, model_name)
 
 
 if __name__ == '__main__':
