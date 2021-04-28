@@ -71,9 +71,16 @@ result
 
 - Train loss & acc (100 epoch)
     - Single GPU : 
+        - Accuracy : 98.6766 %
+        - Result
+        ```
+        predict : a [UNK] with people is near a pier on clear water . [EOS]
+        target : a [UNK] with people is near a pier on clear water . [EOS]
+        ```
+        
     - Six GPUs : 
-        - Accuracy :99.4794 %
-        - result
+        - Accuracy : 99.4794 %
+        - Result
         ```
         predict : a picture of a giraffe standing in a zoo exhibit . [EOS]
         target : a picture of a giraffe standing in a zoo exhibit . [EOS]
