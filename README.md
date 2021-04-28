@@ -77,7 +77,8 @@ result
         predict : a [UNK] with people is near a pier on clear water . [EOS]
         target : a [UNK] with people is near a pier on clear water . [EOS]
         ```
-        
+         <img src = "https://github.com/minjoong507/Image-Captioning-Transformer/blob/master/image/000000239274.jpg" width="300px;" align="center">    
+         
     - Six GPUs : 
         - Accuracy : 99.4794 %
         - Result
