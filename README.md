@@ -95,6 +95,8 @@ result
         predict : two zebras are standing next to a log . [EOS]
         target : two zebras are standing next to a log . [EOS]
         ```
+- Inference
+    - unconstructed
 
 ## TODO List
 - [ ] Description of the model and other details
