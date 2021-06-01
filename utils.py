@@ -1,6 +1,7 @@
 import pickle
 import os
 import time
+import logging
 
 
 def save_pickle(data, filename):
@@ -26,3 +27,13 @@ def start_time():
 def write_log(filename, content):
     with open(filename, 'a') as f:
         f.write(content)
+
+
+def get_logger():
+    logger = logging.getLogger('logger')
+    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(format='%(asctime)s - %(levelname)s -   %(message)s',
+                        datefmt='%m/%d/%Y %H:%M:%S',
+                        level=logging.INFO)
+
+    return logger
