@@ -1,7 +1,7 @@
 import torch
 from model.data_loader import get_dataloader, prepare_batch_input
 from model.model import BertCaptioning
-from utils import load_pickle, start_time, mkdirp, write_log
+from utils import load_pickle, start_time, mkdirp, write_log, get_logger
 from vocab.make_vocab import Make_vocab, Vocab
 from config import BasicOption
 import argparse
@@ -11,19 +11,14 @@ import torch.optim as optim
 import pickle
 import os
 from tqdm import tqdm
-logger = logging.getLogger(__name__)
 
+logger = get_logger()
 
 class Bert_Captioning:
     def __init__(self):
         self.config = BasicOption().parse()
         self.vocab = load_pickle(self.config.vocab_path)
-        self.MultiGPU = False if self.config.MultiGPU == 0 else True
-        if self.MultiGPU and torch.cuda.device_count() > 1:
-            print("Using Multi GPUs")
-            logger.info("Using Multi GPU")
-        else:
-            print("Using Single GPU")
+        self.config.n_gpu = torch.cuda.device_count()
         self.config.vocab_size = len(self.vocab)
         self.DataLoader = get_dataloader(self.config)
         self.Model = BertCaptioning(self.config, len(self.vocab))
@@ -86,20 +81,20 @@ class Bert_Captioning:
         total_words = 0
         total_correct_words = 0
 
+        model.train()
         for batch_idx, batch in tqdm(enumerate(dataloader), desc=" Training =>", total=len(dataloader)):
             optimizer.zero_grad()
 
             batch = prepare_batch_input(batch, self.config.device)
             output, loss = model(batch)
 
-            if self.MultiGPU:
-                loss.sum().backward()
-                epoch_loss += loss.sum().item()
-            else:
-                loss.backward()
-                epoch_loss += loss.item()
+            if self.config.n_gpu > 1:
+                loss = loss.mean()
 
+            loss.backward()
             optimizer.step()
+
+            epoch_loss += loss.item()
 
             translate, batch_output, batch_label = self.translate(output, batch)
             words, correct_words = self.cal_performance(batch_output, batch_label)
@@ -109,7 +104,7 @@ class Bert_Captioning:
         epoch_result = "[Train] Epoch : [{}/{}]\t Loss : {:.4f}\t Acc : {:.4f}".format(epoch, self.config.epochs, epoch_loss / len(self.DataLoader), (total_correct_words / total_words) * 100)
 
         result = epoch_result + '\n' + translate + '\n' + '-' * 100
-        print(result)
+        logger.info(result)
 
         write_log(filename, result)
 
@@ -119,12 +114,14 @@ class Bert_Captioning:
         mkdirp(result_path)
         filename = result_path + '/' + 'train-log.txt'
 
-        if self.MultiGPU:
+        if self.config.n_gpu > 1:
             self.Model = nn.DataParallel(self.Model)
         self.Model.cuda()
+        logger.info("Using {} GPU ".format(torch.cuda.device_count()))
+
         optimizer = optim.Adam(self.Model.parameters(), lr=self.config.lr)
 
-        print("Now training")
+        logger.info("Now Training..")
         self.Model.train()
         for epoch in range(self.config.epochs):
             self.train_epoch(epoch, self.DataLoader, optimizer, self.Model, filename)
