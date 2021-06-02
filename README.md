@@ -101,7 +101,6 @@ result
 ## TODO List
 - [ ] Description of the model and other details
 - [ ] Code Refactoring
-- [ ] Upload requirements.txt
 - [ ] Add Inference.py
 
 ## File
