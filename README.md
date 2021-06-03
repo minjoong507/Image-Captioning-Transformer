@@ -22,10 +22,20 @@ cd Image-Captioning-Transformer
 1. Download COCO dataset
 ```
 mkdir data
+
+wget http://images.cocodataset.org/zips/train2017.zip
+wget http://images.cocodataset.org/zips/val2017.zip
+wget http://images.cocodataset.org/zips/test2017.zip
+
+```
+
+```
 data
 ├── annotations
 ├── ls
-└── val2017
+├── train2017
+├── val2017
+└── test2017
 ```
 
 2. Install packages:
@@ -66,6 +76,8 @@ result
     ├── model-{epoch}.ckpt
     └── train-log.txt
 ```
+
+**Testing**
 
 ## Evaluation
 
