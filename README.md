@@ -73,14 +73,14 @@ Example
 ```
 result
 └──2021-04-16-12-00
-    ├── model-{epoch}.ckpt
+    ├── model.ckpt
     └── train-log.txt
 ```
 
 **Testing**
 
 ```
-python Inference --test_path $
+python Inference --test_path MODEL_DIR_NAME
 ```
 `MODEL_DIR_NAME` is the name of the dir containing the saved model, e.g., `2021-*.`
 
