@@ -45,23 +45,29 @@ data
 - nltk
 - tqdm
 
+3. Add project root to PYTHONPATH
+
+```
+source setup.sh
+```
+
 **Training**
 
-3. Build Vocabulary
+4. Build Vocabulary
 
 
 ```
 python vocab/make_vocab.py
 ```
 
-4. Extract Image features
+5. Extract Image features
 
 
 ```
 python feature_extraction/extraction.py
 ```
 
-5. Training Model
+6. Training Model
 
 ```
 python train.py
