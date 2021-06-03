@@ -3,10 +3,10 @@ import torch.nn as nn
 import torch
 
 
-class Model(nn.Module):
-    def __init__(self, config):
-        super(Model, self).__init__()
-        resnet = models.resnet152(pretrained=True) # load pretrained model
+class ResNet(nn.Module):
+    def __init__(self):
+        super(ResNet, self).__init__()
+        resnet = models.resnet152(pretrained=True)  # load pretrained model
         resnet_modules = list(resnet.children())[:-1]   # except the last fc layer
         self.ResNet = nn.Sequential(*resnet_modules)
 

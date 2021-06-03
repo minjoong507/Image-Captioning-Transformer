@@ -7,23 +7,25 @@ from tqdm import tqdm
 from pycocotools.coco import COCO
 from torchvision.transforms import transforms
 from torch.utils import data
+from utils import get_logger
 from PIL import Image
-from config import BasicOption
-from vocab.make_vocab import Make_vocab, Vocab
+# from vocab.make_vocab import Make_vocab, Vocab
+
+logger = get_logger()
 
 
 class DataLoader(data.Dataset):
     def __init__(self, config):
         self.config = config
-        with open('../' + self.config.vocab_path, 'rb') as f:
-            vocab = pickle.load(f)
-        self.vocab = vocab
-        self.coco = COCO('../' + self.config.annotations_dir)
+        # with open(self.config.vocab_path, 'rb') as f:
+        #     vocab = pickle.load(f)
+        # self.vocab = vocab
+        self.coco = COCO(self.config.annotations_path)
         self.coco_ids = list(self.coco.anns.keys())
 
-        if not os.path.isfile('../vocab/coco_idx.npy'):
+        if not os.path.isfile(self.config.coco_idx_path):
             self.preprocess_idx()
-        self.ids = list(np.load('../vocab/coco_idx.npy')) # self.preprocess_idx()
+        self.ids = list(np.load(self.config.coco_idx_path))
 
         self.transform = transforms.Compose([
             transforms.RandomCrop(self.config.crop_size),
@@ -39,7 +41,7 @@ class DataLoader(data.Dataset):
 
         # load image data
         img_id = '0' * (12 - len(img_id)) + img_id
-        img_path = '../' + self.config.img_dir + str(img_id) + '.jpg'
+        img_path = os.path.join(self.config.img_path, str(img_id) + '.jpg')
         image = Image.open(img_path).convert('RGB')
         image = self.transform(image)
 
@@ -51,13 +53,13 @@ class DataLoader(data.Dataset):
     def preprocess_idx(self):
         T = transforms.ToTensor()
         preprocess = []
-        for i in tqdm(range(len(self.coco_ids))):
+        for i in tqdm(range(len(self.coco_ids)), desc=' Make coco keys', total=len(self.coco_ids)):
             data = self.coco.anns[self.coco_ids[i]]
             img_id = str(data['image_id'])
 
             # load image data
             img_id = '0' * (12 - len(img_id)) + img_id
-            img_path = '../' + self.config.img_dir + str(img_id) + '.jpg'
+            img_path = os.path.join(self.config.img_path, str(img_id) + '.jpg')
             image = Image.open(img_path).convert('RGB')
             image = T(image)
 
@@ -66,9 +68,9 @@ class DataLoader(data.Dataset):
             else:
                 preprocess.append(self.coco_ids[i])
 
-        print('Saved coco idx file!')
+        logger.info('Saved coco idx file!')
 
-        np.save('../vocab/coco_idx.npy', np.array(preprocess))
+        np.save(self.config.coco_idx_path, np.array(preprocess))
 
         return preprocess
 
