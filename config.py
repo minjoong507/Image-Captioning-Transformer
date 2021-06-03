@@ -9,8 +9,8 @@ class BasicOption:
     def initialize(self):
         self.is_initialized = True
 
-        self.parser.add_argument('--annotations_dir', default='data/annotations/captions_val2017.json', type=str)
-        self.parser.add_argument('--img_dir', default='data/val2017/', type=str, help='image path')
+        self.parser.add_argument('--annotations_dir', default='data/annotations/captions_train2017.json', type=str)
+        self.parser.add_argument('--img_dir', default='data/train2017/', type=str, help='image path')
         self.parser.add_argument('--crop_size', default=224, type=int)
         self.parser.add_argument('--epochs', default=10, type=int)
         self.parser.add_argument('--lr', default=1e-4, type=float)
@@ -23,7 +23,6 @@ class BasicOption:
         self.parser.add_argument("-intermediate_size", type=int, default=768)
         self.parser.add_argument("--num_attention_heads", type=int, default=12)
         self.parser.add_argument('--max_position_len', default=500, type=int)
-        self.parser.add_argument('--model_path', default='model/', type=str)
         self.parser.add_argument('--vocab_path', default='vocab/vocab.pickle', type=str)
         self.parser.add_argument('--vocab_size', default=None, type=int)
         self.parser.add_argument('--output_feature_path', default='data/output_feature.pickle', type=str)
@@ -40,6 +39,7 @@ class BasicOption:
         self.parser.add_argument('--MultiGPU', type=int, default=1, help='0: Using single gpu, 1: Using multi gpus')
         self.parser.add_argument('--result_path', type=str, default='result')
         self.parser.add_argument('--n_gpu', type=int, help='number of gpu')
+        self.parser.add_argument("-initializer_range", type=float, default=0.02)
 
     def parse(self):
         if not self.is_initialized:
@@ -72,7 +72,6 @@ class TestOption:
         self.parser.add_argument("-intermediate_size", type=int, default=768)
         self.parser.add_argument("--num_attention_heads", type=int, default=12)
         self.parser.add_argument('--max_position_len', default=500, type=int)
-        self.parser.add_argument('--model_path', default='model/', type=str)
         self.parser.add_argument('--vocab_path', default='vocab/vocab.pickle', type=str)
         self.parser.add_argument('--vocab_size', default=None, type=int)
         self.parser.add_argument('--output_feature_path', default='data/output_feature.pickle', type=str)
@@ -94,5 +93,4 @@ class TestOption:
             self.initialize()
 
         opt = self.parser.parse_args()
-        print(opt)
         return opt
