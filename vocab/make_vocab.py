@@ -2,9 +2,11 @@ from pycocotools.coco import COCO
 import nltk
 from collections import Counter
 import pickle
-from config import BasicOption
 import argparse
-from utils import save_pickle
+from utils import save_pickle, get_logger
+from tqdm import tqdm
+
+logger = get_logger()
 
 
 class Vocab:
@@ -29,7 +31,7 @@ class Vocab:
 
 class Make_vocab:
     def __init__(self, config):
-        self.coco = COCO('../' + config.annotations_dir)
+        self.coco = COCO(config.annotations_dir)
         self.ids = self.coco.anns.keys()
         self.Counter = Counter()
         self.min_fq = config.min_fq
@@ -37,14 +39,14 @@ class Make_vocab:
         self.vocab = Vocab()
 
     def get_vocab(self):
-        for i, id in enumerate(self.ids):
+        for i, id in tqdm(enumerate(self.ids), desc=' Build Vocab =>', total=len(self.ids)):
             caption = str(self.coco.anns[id]['caption'])
             tokens = nltk.word_tokenize(caption.lower())
             self.length = max(len(tokens), self.length)
             self.Counter.update(tokens)
 
-            if (i + 1) % 1000 == 0:
-                print("[{}/{}] Tokenized the captions.".format(i + 1, len(self.ids)))
+            # if (i + 1) % 1000 == 0:
+            #     print("[{}/{}] Tokenized the captions.".format(i + 1, len(self.ids)))
 
         PAD_TOKEN = "[PAD]"  # padding of the whole sequence, note
         CLS_TOKEN = "[CLS]"  # leading token of the joint sequence
@@ -78,10 +80,15 @@ class Make_vocab:
 
 
 if __name__ == '__main__':
-    config = BasicOption().parse()
+    parser = argparse.ArgumentParser(description="Build Vocab")
+    parser.add_argument('--vocab_path', default='data/vocab.pickle', type=str)
+    parser.add_argument('--annotations_dir', default='data/annotations/captions_train2017.json', type=str)
+    parser.add_argument('--min_fq', type=int, default=5)
+    args = parser.parse_args()
 
-    a = Make_vocab(config)
+    a = Make_vocab(args)
     vocab = a.get_vocab()
-    save_pickle(vocab, 'vocab.pickle')
+    save_pickle(vocab, args.vocab_path)
+    logger.info('Save vocab file at {}.'.format(args.vocab_path))
 
 
