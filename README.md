@@ -4,9 +4,9 @@
 
 - This project is an implementation of Image Captiong model based on Transformer
 
-- Used Pytorch for the code. ResNet152 is used for extracting the features. You can check pre-trained models [here](https://github.com/pytorch/vision/tree/master/torchvision/models).
+- Used Pytorch for the code. `ResNet152` is used for extracting the features. You can check pre-trained models [here](https://github.com/pytorch/vision/tree/master/torchvision/models).
 
-- Using [COCO dataset](https://cocodataset.org/#home) 2017 Val images [5K/1GB], annotations [241MB] for train.
+- Using [COCO dataset](https://cocodataset.org/#home) `2017 Train/Val/Test` images, annotations.
 
 - Please check `config.py`. Also, you can train on multi GPUs.
 
@@ -22,10 +22,20 @@ cd Image-Captioning-Transformer
 1. Download COCO dataset
 ```
 mkdir data
+
+wget http://images.cocodataset.org/zips/train2017.zip
+wget http://images.cocodataset.org/zips/val2017.zip
+wget http://images.cocodataset.org/zips/test2017.zip
+
+```
+
+```
 data
 ├── annotations
 ├── ls
-└── val2017
+├── train2017
+├── val2017
+└── test2017
 ```
 
 2. Install packages:
@@ -35,23 +45,29 @@ data
 - nltk
 - tqdm
 
+3. Add project root to PYTHONPATH
+
+```
+source setup.sh
+```
+
 **Training**
 
-3. Build Vocabulary
+4. Build Vocabulary
 
 
 ```
 python vocab/make_vocab.py
 ```
 
-4. Extract Image features
+5. Extract Image features
 
 
 ```
 python feature_extraction/extraction.py
 ```
 
-5. Training Model
+6. Training Model
 
 ```
 python train.py
@@ -63,9 +79,16 @@ Example
 ```
 result
 └──2021-04-16-12-00
-    ├── model-{epoch}.ckpt
+    ├── model.ckpt
     └── train-log.txt
 ```
+
+**Testing**
+
+```
+python Inference --test_path MODEL_DIR_NAME
+```
+`MODEL_DIR_NAME` is the name of the dir containing the saved model, e.g., `2021-*.`
 
 ## Evaluation
 
