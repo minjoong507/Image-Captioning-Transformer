@@ -171,15 +171,24 @@ class BertCaptioning(nn.Module):
         if isinstance(module, nn.Linear) and module.bias is not None:
             module.bias.data.zero_()
 
-    def forward(self, inputs):
+    def encode(self, inputs):
         embedding = self.BertEmbedding(inputs['img_feature'], inputs['img_sen_input_ids'])
         enc_output = self.BertEncoder(embedding, inputs['img_sen_mask'])[-1]
 
+        return enc_output
+
+    def decode(self, inputs, enc_output):
         caption_embedding = self.BertEmbedding.get_caption_word_embedding(inputs['captions_input_ids'])
         dec_output = self.BertDeocder(caption_embedding, inputs['captions_mask'], enc_output, inputs['img_sen_mask'])[-1]
 
         output = self.Classifier(dec_output)
 
         loss = self.loss(output.view(-1, self.config.vocab_size), inputs['captions_label'].view(-1))
+
+        return output, loss
+
+    def forward(self, inputs):
+        enc_output = self.encode(inputs)
+        output, loss = self.decode(inputs, enc_output)
 
         return output, loss
