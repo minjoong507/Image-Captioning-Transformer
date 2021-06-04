@@ -7,14 +7,14 @@ from tqdm import tqdm
 from pycocotools.coco import COCO
 from torchvision.transforms import transforms
 from torch.utils import data
-from utils import get_logger
+from utils import get_logger, load_json
 from PIL import Image
 # from vocab.make_vocab import Make_vocab, Vocab
 
 logger = get_logger()
 
 
-class DataLoader(data.Dataset):
+class TrainDataLoader(data.Dataset):
     def __init__(self, config):
         self.config = config
         # with open(self.config.vocab_path, 'rb') as f:
@@ -53,7 +53,7 @@ class DataLoader(data.Dataset):
     def preprocess_idx(self):
         T = transforms.ToTensor()
         preprocess = []
-        for i in tqdm(range(len(self.coco_ids)), desc=' Make coco keys', total=len(self.coco_ids)):
+        for i in tqdm(range(len(self.coco_ids)), desc=' Build coco dict for training', total=len(self.coco_ids)):
             data = self.coco.anns[self.coco_ids[i]]
             img_id = str(data['image_id'])
 
@@ -75,8 +75,69 @@ class DataLoader(data.Dataset):
         return preprocess
 
 
+class EvalDataLoader(data.Dataset):
+    def __init__(self, config):
+        self.config = config
+        self.test_image_dict = load_json(self.config.eval_annotations_path)
+
+        if not os.path.isfile(self.config.eval_coco_idx_path):
+            self.preprocess_idx()
+        self.image_info = list(np.load(self.config.eval_coco_idx_path))
+
+        self.transform = transforms.Compose([
+            transforms.RandomCrop(self.config.crop_size),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406),
+                                 (0.229, 0.224, 0.225))
+            ])
+
+    def __getitem__(self, idx):
+        image_id, image = self.image_info[idx]['image_id'], self.image_info[idx]['image_feat']
+        image = self.transform(image)
+
+        return image_id, image
+
+    def __len__(self):
+        return len(self.image_info)
+
+    def preprocess_idx(self):
+        T = transforms.ToTensor()
+        preprocess = []
+        for i in tqdm(range(len(self.test_image_dict['images'])), desc=' Build coco dict for evaluation', total=len(self.test_image_dict['images'])):
+            img_info = self.test_image_dict['images'][i]
+            image_id, image_filename = img_info['id'], img_info['file_name']
+
+            # load image data
+            image_path = os.path.join(self.config.eval_img_path, image_filename)
+            image = Image.open(image_path).convert('RGB')
+            image = T(image)
+
+            if image.shape[1] < 224 or image.shape[2] < 224:
+                continue
+            else:
+                preprocess.append({'image_id': image_id, 'image_feat': image})
+
+        logger.info('Saved coco idx file!')
+
+        np.save(self.config.eval_annotations_path, np.array(preprocess))
+
+        return preprocess
+
+
 def get_dataloader(config):
-    CocoData = DataLoader(config)
+    CocoData = TrainDataLoader(config)
+    Dataloader = torch.utils.data.DataLoader(dataset=CocoData,
+                                             batch_size=config.batch_size,
+                                             shuffle=True,
+                                             num_workers=config.num_workers,
+                                             drop_last=False)
+
+    return Dataloader
+
+
+def get_eval_dataloader(config):
+    CocoData = EvalDataLoader(config)
     Dataloader = torch.utils.data.DataLoader(dataset=CocoData,
                                              batch_size=config.batch_size,
                                              shuffle=False,
