@@ -22,13 +22,22 @@ cd Image-Captioning-Transformer
 1. Download COCO dataset
 ```
 mkdir data
-
+```
+- Download image files
+```
 wget http://images.cocodataset.org/zips/train2017.zip
 wget http://images.cocodataset.org/zips/val2017.zip
 wget http://images.cocodataset.org/zips/test2017.zip
 
 ```
 
+- Download annotation files
+```
+wget http://images.cocodataset.org/annotations/annotations_trainval2017.zip
+
+```
+
+- After downloading the data, you should put the image/annotation files in data dir.
 ```
 data
 ├── annotations
@@ -45,13 +54,14 @@ data
 - nltk
 - tqdm
 
+
+**Training**
+
 3. Add project root to PYTHONPATH
 
 ```
 source setup.sh
 ```
-
-**Training**
 
 4. Build Vocabulary
 
