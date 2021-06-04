@@ -2,6 +2,7 @@ import pickle
 import os
 import time
 import logging
+import json
 
 
 def save_pickle(data, filename):
@@ -13,6 +14,11 @@ def load_pickle(filename):
     with open(filename, 'rb') as f:
         data = pickle.load(f)
     return data
+
+
+def load_json(file_path):
+    with open(file_path, "r") as f:
+        return json.load(f)
 
 
 def mkdirp(p):
