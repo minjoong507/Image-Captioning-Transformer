@@ -14,13 +14,14 @@ from tqdm import tqdm
 
 logger = get_logger()
 
-class Bert_Captioning:
-    def __init__(self):
-        self.config = BasicOption().parse()
+
+class BertCaptioning_For_Training:
+    def __init__(self, config):
+        self.config = config
         self.vocab = load_pickle(self.config.vocab_path)
         self.config.n_gpu = torch.cuda.device_count()
         self.config.vocab_size = len(self.vocab)
-        self.DataLoader = get_dataloader(self.config)
+        self.Train_loader = get_dataloader(self.config)
         self.Model = BertCaptioning(self.config, len(self.vocab))
 
     def translate(self, output, batch):
@@ -52,7 +53,7 @@ class Bert_Captioning:
     def clean_text(self, input):
         result = []
         for word in input:
-            if word == '[EOS]':
+            if word == self.vocab.EOS_TOKEN:
                 result.append(word)
                 break
             result.append(word)
@@ -101,7 +102,7 @@ class Bert_Captioning:
             total_words += words
             total_correct_words += correct_words
 
-        epoch_result = "[Train] Epoch : [{}/{}]\t Loss : {:.4f}\t Acc : {:.4f}".format(epoch, self.config.epochs, epoch_loss / len(self.DataLoader), (total_correct_words / total_words) * 100)
+        epoch_result = "[Train] Epoch : [{}/{}]\t Loss : {:.4f}\t Acc : {:.4f}".format(epoch, self.config.epochs, epoch_loss / len(dataloader), (total_correct_words / total_words) * 100)
 
         result = epoch_result + '\n' + translate + '\n' + '-' * 100
         logger.info(result)
@@ -112,7 +113,7 @@ class Bert_Captioning:
         mkdirp(self.config.result_path)
         result_path = self.config.result_path + '/' + start_time()
         mkdirp(result_path)
-        filename = result_path + '/' + 'train-log.txt'
+        filename = os.path.join(result_path, 'train-log.txt')
 
         if self.config.n_gpu > 1:
             self.Model = nn.DataParallel(self.Model)
@@ -124,7 +125,7 @@ class Bert_Captioning:
         logger.info("Now Training..")
         self.Model.train()
         for epoch in range(self.config.epochs):
-            self.train_epoch(epoch, self.DataLoader, optimizer, self.Model, filename)
+            self.train_epoch(epoch, self.Train_loader, optimizer, self.Model, filename)
 
         checkpoint = {
             "model": self.Model.state_dict(),
@@ -132,10 +133,12 @@ class Bert_Captioning:
             "epoch": self.config.epochs
         }
 
-        model_name = result_path + '/' + 'model-{}.ckpt'.format(self.config.epochs)
+        logger.info("Now Saving model checkpoint..")
+        model_name = os.path.join(result_path, 'model.ckpt')
         torch.save(checkpoint, model_name)
 
 
 if __name__ == '__main__':
-    b = Bert_Captioning()
+    args = BasicOption().parse()
+    b = BertCaptioning_For_Training(args)
     b.train()
