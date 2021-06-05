@@ -11,6 +11,13 @@ logger = get_logger()
 
 class Vocab:
     def __init__(self):
+        self.PAD_TOKEN = "[PAD]"  # padding of the whole sequence, note
+        self.CLS_TOKEN = "[CLS]"  # leading token of the joint sequence
+        self.SEP_TOKEN = "[SEP]"  # a separator for video and text
+        self.IMG_TOKEN = "[IMG]"  # used as placeholder in the clip+text joint sequence
+        self.BOS_TOKEN = "[BOS]"  # beginning of the sentence
+        self.EOS_TOKEN = "[EOS]"  # ending of the sentence
+        self.UNK_TOKEN = "[UNK]"
         self.word2idx = {}
         self.idx2word = {}
         self.idx = 0
@@ -31,12 +38,30 @@ class Vocab:
 
 class Make_vocab:
     def __init__(self, config):
-        self.coco = COCO(config.annotations_dir)
+        self.coco = COCO(config.annotations_path)
         self.ids = self.coco.anns.keys()
         self.Counter = Counter()
         self.min_fq = config.min_fq
         self.length = 0
         self.vocab = Vocab()
+
+    def initialize_vocab(self):
+        PAD_TOKEN = "[PAD]"  # padding of the whole sequence
+        CLS_TOKEN = "[CLS]"  # leading token of the joint sequence
+        SEP_TOKEN = "[SEP]"  # a separator for video and text
+        IMG_TOKEN = "[IMG]"  # used as placeholder in the clip+text joint sequence
+        BOS_TOKEN = "[BOS]"  # beginning of the sentence
+        EOS_TOKEN = "[EOS]"  # ending of the sentence
+        UNK_TOKEN = "[UNK]"
+
+        self.vocab.add_word(PAD_TOKEN)
+        self.vocab.add_word(CLS_TOKEN)
+        self.vocab.add_word(SEP_TOKEN)
+        self.vocab.add_word(IMG_TOKEN)
+        self.vocab.add_word(BOS_TOKEN)
+        self.vocab.add_word(EOS_TOKEN)
+        self.vocab.add_word(UNK_TOKEN)
+
 
     def get_vocab(self):
         for i, id in tqdm(enumerate(self.ids), desc=' Build Vocab =>', total=len(self.ids)):
@@ -45,32 +70,10 @@ class Make_vocab:
             self.length = max(len(tokens), self.length)
             self.Counter.update(tokens)
 
-            # if (i + 1) % 1000 == 0:
-            #     print("[{}/{}] Tokenized the captions.".format(i + 1, len(self.ids)))
+        # Add speical tokens
+        self.initialize_vocab()
 
-        PAD_TOKEN = "[PAD]"  # padding of the whole sequence, note
-        CLS_TOKEN = "[CLS]"  # leading token of the joint sequence
-        SEP_TOKEN = "[SEP]"  # a separator for video and text
-        IMG_TOKEN = "[IMG]"  # used as placeholder in the clip+text joint sequence
-        BOS_TOKEN = "[BOS]"  # beginning of the sentence
-        EOS_TOKEN = "[EOS]"  # ending of the sentence
-        UNK_TOKEN = "[UNK]"
-        PAD = 0
-        CLS = 1
-        SEP = 2
-        IMG = 3
-        BOS = 4
-        EOS = 5
-        UNK = 6
-
-        self.vocab.add_word('[PAD]')
-        self.vocab.add_word('[CLS]')
-        self.vocab.add_word('[SEP]')
-        self.vocab.add_word('[IMG]')
-        self.vocab.add_word('[BOS]')
-        self.vocab.add_word('[EOS]')
-        self.vocab.add_word('[UNK]')
-
+        # Add words
         words = [word for word, cnt in self.Counter.items() if cnt >= self.min_fq]
 
         for i, word in enumerate(words):
@@ -82,7 +85,7 @@ class Make_vocab:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Build Vocab")
     parser.add_argument('--vocab_path', default='data/vocab.pickle', type=str)
-    parser.add_argument('--annotations_dir', default='data/annotations/captions_train2017.json', type=str)
+    parser.add_argument('--annotations_path', default='data/annotations/captions_train2017.json', type=str)
     parser.add_argument('--min_fq', type=int, default=5)
     args = parser.parse_args()
 
