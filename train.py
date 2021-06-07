@@ -20,6 +20,7 @@ class BertCaptioning_For_Training:
         self.config = config
         self.vocab = load_pickle(self.config.vocab_path)
         self.config.n_gpu = torch.cuda.device_count()
+        self.device = torch.device("cuda:{}".format(self.config.device) if self.config.device >= 0 else "cpu")
         self.config.vocab_size = len(self.vocab)
         self.Train_loader = get_dataloader(self.config)
         self.Model = BertCaptioning(self.config, len(self.vocab))
@@ -76,7 +77,7 @@ class BertCaptioning_For_Training:
 
         return total_words, total_correct_words
 
-    def train_epoch(self, epoch, dataloader, optimizer, model, filename):
+    def train_epoch(self, epoch, dataloader, optimizer, model, filename, device):
         translate = ""
         epoch_loss = 0.0
         total_words = 0
@@ -86,7 +87,7 @@ class BertCaptioning_For_Training:
         for batch_idx, batch in tqdm(enumerate(dataloader), desc=" Training =>", total=len(dataloader)):
             optimizer.zero_grad()
 
-            batch = prepare_batch_input(batch, self.config.device)
+            batch = prepare_batch_input(batch, device)
             output, loss = model(batch)
 
             if self.config.n_gpu > 1:
@@ -102,7 +103,7 @@ class BertCaptioning_For_Training:
             total_words += words
             total_correct_words += correct_words
 
-        epoch_result = "[Train] Epoch : [{}/{}]\t Loss : {:.4f}\t Acc : {:.4f}".format(epoch, self.config.epochs, epoch_loss / len(dataloader), (total_correct_words / total_words) * 100)
+        epoch_result = "[Train] Epoch : [{}/{}]\t Loss : {:.4f}\t Acc : {:.4f}".format(epoch + 1, self.config.epochs, epoch_loss / len(dataloader), (total_correct_words / total_words) * 100)
 
         result = epoch_result + '\n' + translate + '\n' + '-' * 100
         logger.info(result)
@@ -115,25 +116,37 @@ class BertCaptioning_For_Training:
         mkdirp(result_path)
         filename = os.path.join(result_path, 'train-log.txt')
 
-        if self.config.n_gpu > 1:
+        if self.config.MultiGPU > 0 and self.config.n_gpu > 1:
+            logger.info("Using {} GPU ".format(torch.cuda.device_count()))
             self.Model = nn.DataParallel(self.Model)
-        self.Model.cuda()
-        logger.info("Using {} GPU ".format(torch.cuda.device_count()))
+
+        else:
+            logger.info("Using Single GPU ")
+
+        self.Model.to(self.device)
 
         optimizer = optim.Adam(self.Model.parameters(), lr=self.config.lr)
 
         logger.info("Now Training..")
         self.Model.train()
         for epoch in range(self.config.epochs):
-            self.train_epoch(epoch, self.Train_loader, optimizer, self.Model, filename)
+            self.train_epoch(epoch, self.Train_loader, optimizer, self.Model, filename, self.device)
 
-        checkpoint = {
-            "model": self.Model.state_dict(),
-            "config": self.config,
-            "epoch": self.config.epochs
-        }
+        if self.config.MultiGPU > 0 and self.config.n_gpu > 1:
+            checkpoint = {
+                "model": self.Model.module.state_dict(),
+                "config": self.config,
+                "epoch": self.config.epochs
+            }
 
-        logger.info("Now Saving model checkpoint..")
+        else:
+            checkpoint = {
+                "model": self.Model.state_dict(),
+                "config": self.config,
+                "epoch": self.config.epochs
+            }
+
+        logger.info("Now Saving model checkpoint to {}".format(result_path))
         model_name = os.path.join(result_path, 'model.ckpt')
         torch.save(checkpoint, model_name)
 
