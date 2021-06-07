@@ -7,6 +7,7 @@ from torch.utils import data
 from vocab.make_vocab import Make_vocab, Vocab
 import pickle
 import os
+from utils import load_pickle
 
 
 class ImageCaption_TrainDataLoader(data.Dataset):
@@ -30,13 +31,13 @@ class ImageCaption_TrainDataLoader(data.Dataset):
     def __init__(self, config):
         self.config = config
         self.is_train = self.config.is_train
-        with open(self.config.vocab_path, 'rb') as f:
-            vocab = pickle.load(f)
-        self.vocab = vocab
+        # with open(self.config.vocab_path, 'rb') as f:
+        #     vocab = pickle.load(f)
+        self.vocab = load_pickle(self.config.vocab_path)
 
-        with open(self.config.visual_feature_path, 'rb') as f:
-            img_feautre = pickle.load(f)
-        self.img_feautre = img_feautre
+        # with open(self.config.visual_feature_path, 'rb') as f:
+        #     img_feautre = pickle.load(f)
+        self.img_feautre = load_pickle(self.config.visual_feature_path)
 
         self.coco = COCO(self.config.annotations_path)
         self.coco_ids = list(self.coco.anns.keys())
@@ -99,6 +100,7 @@ class ImageCaption_TrainDataLoader(data.Dataset):
 
         return sentence_tokens, mask, caption_tokens, caption_mask
 
+
 class ImageCaption_EvalDataLoader(data.Dataset):
     PAD_TOKEN = "[PAD]"  # padding of the whole sequence, note
     CLS_TOKEN = "[CLS]"  # leading token of the joint sequence
@@ -119,23 +121,21 @@ class ImageCaption_EvalDataLoader(data.Dataset):
 
     def __init__(self, config):
         self.config = config
-        self.is_train = self.config.is_train
-        with open(self.config.vocab_path, 'rb') as f:
-            vocab = pickle.load(f)
-        self.vocab = vocab
+        # with open(self.config.vocab_path, 'rb') as f:
+        #     vocab = pickle.load(f)
+        self.vocab = load_pickle(self.config.vocab_path)
 
-        with open(self.config.visual_feature_path, 'rb') as f:
-            img_feautre = pickle.load(f)
-        self.img_feautre = img_feautre
+        # with open(self.config.visual_feature_path, 'rb') as f:
+        #     img_feautre = pickle.load(f)
+        self.img_feautre = load_pickle(self.config.test_visual_feature_path)
 
-        if self.is_train:
-            self.coco = COCO(self.config.annotations_path)
-            self.coco_ids = list(self.coco.anns.keys())
-            self.ids = list(np.load(self.config.coco_idx_path))
+        self.coco = COCO(self.config.annotations_path)
+        self.coco_ids = list(self.coco.anns.keys())
+        self.ids = list(np.load(self.config.eval_coco_idx_path))
 
     def __getitem__(self, idx):
-        data = self.coco.anns[self.ids[idx]]
-        captions = data['caption']
+        data = self.ids[idx]
+        captions = ""
         img_id = str(data['image_id'])
         img_id = '0' * (12 - len(img_id)) + img_id
 
