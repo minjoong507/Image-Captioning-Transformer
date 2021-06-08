@@ -30,6 +30,12 @@ def start_time():
     return time.strftime('%Y-%m-%d-%H-%M', time.localtime(time.time()))
 
 
+def save_jsonl(data, filename):
+    """data is a list"""
+    with open(filename, "w") as f:
+        f.write("\n".join([json.dumps(e) for e in data]))
+
+
 def write_log(filename, content):
     with open(filename, 'a') as f:
         f.write(content)
