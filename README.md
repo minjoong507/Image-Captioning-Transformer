@@ -20,24 +20,11 @@ cd Image-Captioning-Transformer
 ```
 
 1. Download COCO dataset
+- After downloading the image/annotation data, you should put the image/annotation files in data dir.
 ```
 mkdir data
 ```
-- Download image files
-```
-wget http://images.cocodataset.org/zips/train2017.zip
-wget http://images.cocodataset.org/zips/val2017.zip
-wget http://images.cocodataset.org/zips/test2017.zip
 
-```
-
-- Download annotation files
-```
-wget http://images.cocodataset.org/annotations/annotations_trainval2017.zip
-
-```
-
-- After downloading the data, you should put the image/annotation files in data dir.
 ```
 data
 ├── annotations
@@ -53,6 +40,7 @@ data
 - Pytorch 1.7.0+cu110
 - nltk
 - tqdm
+- pycocotools
 
 
 **Training**
@@ -98,7 +86,7 @@ result
 ```
 python Inference --test_path MODEL_DIR_NAME
 ```
-`MODEL_DIR_NAME` is the name of the dir containing the saved model, e.g., `2021-*.`
+`MODEL_DIR_NAME` is the name of the dir containing the saved model, e.g., `result/2021-*.`
 
 ## Evaluation
 
@@ -132,9 +120,9 @@ python Inference --test_path MODEL_DIR_NAME
     - unconstructed
 
 ## TODO List
-- [ ] Description of the model and other details
+- [X] Description of the model and other details
 - [ ] Code Refactoring
-- [ ] Add Inference.py
+- [X] Add Inference.py
 
 ## File
 ```
