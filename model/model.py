@@ -187,6 +187,16 @@ class BertCaptioning(nn.Module):
 
         return output, loss
 
+    def decode_for_eval(self, inputs, inputs_ids, input_mask, enc_output):
+        caption_embedding = self.BertEmbedding.get_caption_word_embedding(inputs_ids)
+        dec_output = self.BertDeocder(caption_embedding, input_mask, enc_output, inputs['img_sen_mask'])[-1]
+
+        output = self.Classifier(dec_output)
+
+        # loss = self.loss(output.view(-1, self.config.vocab_size), inputs['captions_label'].view(-1))
+
+        return output
+
     def forward(self, inputs):
         enc_output = self.encode(inputs)
         output, loss = self.decode(inputs, enc_output)

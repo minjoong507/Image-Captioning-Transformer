@@ -121,53 +121,35 @@ class ImageCaption_EvalDataLoader(data.Dataset):
 
     def __init__(self, config):
         self.config = config
-        # with open(self.config.vocab_path, 'rb') as f:
-        #     vocab = pickle.load(f)
         self.vocab = load_pickle(self.config.vocab_path)
-
-        # with open(self.config.visual_feature_path, 'rb') as f:
-        #     img_feautre = pickle.load(f)
         self.img_feautre = load_pickle(self.config.test_visual_feature_path)
-
-        self.coco = COCO(self.config.annotations_path)
-        self.coco_ids = list(self.coco.anns.keys())
-        self.ids = list(np.load(self.config.eval_coco_idx_path))
+        self.ids = list(self.img_feautre.keys())
 
     def __getitem__(self, idx):
-        data = self.ids[idx]
-        captions = ""
-        img_id = str(data['image_id'])
-        img_id = '0' * (12 - len(img_id)) + img_id
-
-        img_feat = self.img_feautre[img_id]
+        img_feat = self.img_feautre[self.ids[idx]]
         img_feature, img_tokens, img_mask = self.convert_img_feature(img_feat)
-        sen_tokens, sen_mask, captions_tokens, captions_mask = self.convert_sentence_feature(str(captions).lower(), self.config.max_sub_len)
+        sen_tokens, sen_mask = [self.PAD_TOKEN] * (self.config.max_sub_len + 3), [0] * (self.config.max_sub_len + 3)
 
         img_sen_tokens = img_tokens + sen_tokens
 
         img_sen_input_ids = [self.vocab(tokens) for tokens in img_sen_tokens]
         img_sen_mask = img_mask + sen_mask
 
-        captions_input_ids = [self.vocab(tokens) for tokens in captions_tokens]
-
-        captions_label = [self.IGNORE if m == 0 else token
-                         for token, m, in zip(captions_input_ids, captions_mask)][1:] + [self.IGNORE]
-
         data = dict(
-            img_id=img_id,
+            img_id=self.ids[idx],
             img_feature=np.array(img_feat),
             img_mask=np.array(img_mask).astype(np.float32),
             img_sen_input_ids=np.array(img_sen_input_ids).astype(np.int64),
             img_sen_mask=np.array(img_sen_mask).astype(np.float32),
-            captions_input_ids=np.array(captions_input_ids).astype(np.int64),
-            captions_mask=np.array(captions_mask).astype(np.float32).astype(np.int64),
-            captions_label=np.array(captions_label).astype(np.int64),
         )
 
         return data
 
     def __len__(self):
         return len(self.ids)
+
+    def convert_ids_to_sentence(self, ids):
+        return [self.vocab.idx2word[wid] for wid in ids if wid not in [self.PAD, self.IGNORE]]
 
     def convert_img_feature(self, img_feature):
         Img_tokens = [self.CLS_TOKEN] + [self.IMG_TOKEN] + [self.SEP_TOKEN]
@@ -235,7 +217,7 @@ def get_eval_dataloader(config):
     CocoData = ImageCaption_EvalDataLoader(config)
     EvalDataloader = torch.utils.data.DataLoader(dataset=CocoData,
                                              batch_size=config.batch_size,
-                                             shuffle=config.shuffle,
+                                             shuffle=False,
                                              num_workers=config.num_workers,
                                              drop_last=False)
 
