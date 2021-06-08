@@ -117,7 +117,17 @@ python Inference --test_path MODEL_DIR_NAME
         target : two zebras are standing next to a log . [EOS]
         ```
 - Inference
-    - unconstructed
+    - An example of such file is pred.jsonl, formatted as:
+    ```
+    {
+        "image_id": 00004983,
+        "caption": ""
+    }
+    ```
+    
+    - `pred.jsonl` will be saved in `eval` dir.
+
+
 
 ## TODO List
 - [X] Description of the model and other details
