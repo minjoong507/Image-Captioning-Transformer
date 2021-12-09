@@ -15,7 +15,7 @@
 
 0. Clone this repo
 ```
-git clond https://github.com/minjoong507/Image-Captioning-Transformer.git
+git clone https://github.com/minjoong507/Image-Captioning-Transformer.git
 cd Image-Captioning-Transformer
 ```
 
